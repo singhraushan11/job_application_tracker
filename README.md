@@ -1,16 +1,14 @@
 # Job Application Tracker
 
-A command-line based Job Application Tracker developed using Python and MySQL. This application helps users manage job applications efficiently by storing records in a MySQL database.
+A command-line based Job Application Tracker developed using Python and MySQL. This application help users manage job applications efficiently by storing records in a MySQL database.
 
 ## Features
 
 - **Add Application** – Add a new job application with company name, role, applied date, status, and notes.
 - **View Applications** – Display all saved job applications.
-- **Search Applications** – Search applications by company name, role, or status.
-- **Sort Applications** – Sort records by newest date, oldest date, or company name.
+- **Search Applications** – Search applications by company name, role.
 - **Update Status** – Update the status of an existing application.
 - **Delete Application** – Remove an application from the database.
-- **Statistics Dashboard** – Display the total number of applications and the number of applications for each status.
 - **Input Validation** – Prevent invalid or empty user input.
 - **Exception Handling** – Handle invalid input and database errors gracefully.
 - **Secure Configuration** – Store database credentials securely using a `.env` file.

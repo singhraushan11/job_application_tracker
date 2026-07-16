@@ -1,13 +1,15 @@
+#Job Application Tracker :-
+
 import mysql.connector
-from dotenv import load_dotenv      
-import os                           
-from datetime import datetime       
+from dotenv import load_dotenv
+import os
+from datetime import datetime
 
-load_dotenv()                        
+load_dotenv()
 
 
-# ---- DATABASE CONNECTION ----
-def get_connection():
+# connection with database:-
+def get_con():
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
@@ -16,282 +18,239 @@ def get_connection():
     )
 
 
-# ---- INPUT VALIDATION ----
-
-def get_non_empty_input(field_name):
+# User input:-
+def get_input(msg):
     while True:
-        value = input(f"Enter {field_name}: ").strip()
-        if value == "":
-            print(f"{field_name} cannot be empty! Please try again.")
+        val = input(f"Enter {msg}: ")
+        if val == "":
+            print("Input cannot be empty!")
         else:
-            return value
+            return val
 
 
-def get_valid_date():
+def get_date():
     while True:
-        date_str = input("Enter applied date (YYYY-MM-DD): ").strip()
+        dt = input("Enter applied date (YYYY-MM-DD): ")
         try:
-            datetime.strptime(date_str, "%Y-%m-%d")
-            return date_str
+            datetime.strptime(dt, "%Y-%m-%d")
+            return dt
         except ValueError:
-            print("Invalid date format! Please use YYYY-MM-DD (e.g., 2026-07-12).")
+            print("Wrong date format!")
 
 
-def get_valid_status():
-    statuses = ["applied", "interview", "offer", "rejected", "selected"]
-    print("\nSelect status:")
-    for i, s in enumerate(statuses, start=1):
-        print(f"{i}. {s}")
+def get_status():
+    st = ["applied", "interview", "offer", "rejected", "selected"]
+
+    print("\nSelect Status")
+    for i in range(len(st)):
+        print(f"{i+1}. {st[i]}")
 
     while True:
-        choice = input(f"Enter choice (1-{len(statuses)}): ").strip()
-        if choice.isdigit() and 1 <= int(choice) <= len(statuses):
-            return statuses[int(choice) - 1]
+        ch = input("Enter choice: ")
+        if ch.isdigit() and 1 <= int(ch) <= len(st):
+            return st[int(ch)-1]
         else:
-            print(f"Invalid choice! Please enter a number between 1-{len(statuses)}.")
+            print("Wrong choice!")
 
 
-# ---- CRUD FUNCTIONS ----
+# CRUD operations :-
+def add_application(com, rl, dt, st="applied", nt=""):
+    con = get_con()
+    cur = con.cursor()
 
-def add_application(company, role, applied_date, status="applied", notes=""):
-    conn = get_connection()
-    cursor = conn.cursor()
+    if nt == "":
+        nt = None
 
-    notes_value = notes.strip() if notes.strip() != "" else None
-
-    query = """
-        INSERT INTO applications (company_name, role, applied_date, status, notes)
-        VALUES (%s, %s, %s, %s, %s)
+    q = """
+    INSERT INTO applications
+    (company_name, role, applied_date, status, notes)
+    VALUES (%s,%s,%s,%s,%s)
     """
-    values = (company, role, applied_date, status, notes_value)
 
-    cursor.execute(query, values)
-    conn.commit()
+    cur.execute(q, (com, rl, dt, st, nt))
+    con.commit()
 
-    print(f"Application added: {company} - {role} (ID: {cursor.lastrowid})")
+    print("Application Added")
+    print("ID :", cur.lastrowid)
 
-    cursor.close()
-    conn.close()
+    cur.close()
+    con.close()
 
 
-def view_applications():
-    conn = get_connection()
-    cursor = conn.cursor()
+def view_application():
+    con = get_con()
+    cur = con.cursor()
 
-    cursor.execute("SELECT * FROM applications")
-    result = cursor.fetchall()
-    print_applications(result)
+    cur.execute("SELECT * FROM applications")
+    res = cur.fetchall()
 
-    cursor.close()
-    conn.close()
+    print_application(res)
 
-def update_status(application_id, new_status):
-    conn = get_connection()
-    cursor = conn.cursor()
+    cur.close()
+    con.close()
 
-    query = "UPDATE applications SET status = %s WHERE id = %s"
-    cursor.execute(query, (new_status, application_id))
-    conn.commit()
 
-    if cursor.rowcount == 0:
-        print(f"No application found with ID {application_id}.")
+def update_application(id, st):
+    con = get_con()
+    cur = con.cursor()
+
+    q = "UPDATE applications SET status=%s WHERE id=%s"
+
+    cur.execute(q, (st, id))
+    con.commit()
+
+    if cur.rowcount == 0:
+        print("ID not found.")
     else:
-        print(f"Status updated successfully for ID {application_id} to {new_status}.")
+        print("Status Updated.")
 
-    cursor.close()
-    conn.close()
+    cur.close()
+    con.close()
 
 
-def delete_application(application_id):
-    conn = get_connection()
-    cursor = conn.cursor()
+def del_application(id):
+    con = get_con()
+    cur = con.cursor()
 
-    query = "DELETE FROM applications WHERE id = %s"
-    cursor.execute(query, (application_id,))
-    conn.commit()
+    q = "DELETE FROM applications WHERE id=%s"
 
-    if cursor.rowcount == 0:
-        print(f"No application found with ID {application_id}.")
+    cur.execute(q, (id,))
+    con.commit()
+
+    if cur.rowcount == 0:
+        print("ID not found.")
     else:
-        print(f"Application with ID {application_id} deleted successfully.")
+        print("Deleted Successfully.")
 
-    cursor.close()
-    conn.close()
+    cur.close()
+    con.close()
 
-
-# ---- HELPER FUNCTIONS ----
-def print_applications(rows):
+#  function :-
+def print_application(rows):
     if not rows:
-        print("No applications found.")
+        print("No Data Found.")
         return
-    for row in rows:
-        print(f"ID: {row[0]}, Company: {row[1]}, Role: {row[2]}, Applied Date: {row[3]}, Status: {row[4]}, Notes: {row[5]}")
+
+    for r in rows:
+        print(f"ID: {r[0]}, Company: {r[1]}, Role: {r[2]}, Date: {r[3]}, Status: {r[4]}, Notes: {r[5]}")
 
 
-def get_application_by_id(application_id):
-    conn = get_connection()
-    cursor = conn.cursor()
+def get_application(id):
+    con = get_con()
+    cur = con.cursor()
 
-    cursor.execute("SELECT * FROM applications WHERE id = %s", (application_id,))
-    result = cursor.fetchone()
+    q = "SELECT * FROM applications WHERE id=%s"
+    cur.execute(q, (id,))
+    res = cur.fetchone()
 
-    cursor.close()
-    conn.close()
-    return result
+    cur.close()
+    con.close()
 
-# --- SEARCH ---
-def search_applications(field, keyword):
-    conn = get_connection()
-    cursor = conn.cursor()
+    return res
 
-    column_map = {
+
+# Search applications :-
+def search_application(ch, key):
+    con = get_con()
+    cur = con.cursor()
+
+    col = {
         "1": "company_name",
-        "2": "role",
-        "3": "status"
+        "2": "role"
     }
-    column = column_map[field]
 
-    query = f"SELECT * FROM applications WHERE {column} LIKE %s"
-    cursor.execute(query, (f"%{keyword}%",))
-    result = cursor.fetchall()
+    q = f"SELECT * FROM applications WHERE {col[ch]} LIKE %s"
 
-    print(f"\nFound {len(result)} result(s):")
-    print_applications(result)
+    cur.execute(q, (f"%{key}%",))
+    res = cur.fetchall()
 
-    cursor.close()
-    conn.close()
+    print(f"\nFound {len(res)} Result(s)")
+    print_application(res)
 
-# --- SORT ---
-def sort_applications(order_choice):
-    conn = get_connection()
-    cursor = conn.cursor()
+    cur.close()
+    con.close()
 
-    if order_choice == "1":
-        query = "SELECT * FROM applications ORDER BY applied_date DESC"   # newest first
-    elif order_choice == "2":
-        query = "SELECT * FROM applications ORDER BY applied_date ASC"    # oldest first
-    else:
-        query = "SELECT * FROM applications ORDER BY company_name ASC"    # A to Z
+# Menu :-
+def main():
 
-    cursor.execute(query)
-    result = cursor.fetchall()
-    print_applications(result)
-
-    cursor.close()
-    conn.close()
-
-# --- STATISTICS ---
-def show_statistics():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT COUNT(*) FROM applications")
-    total = cursor.fetchone()[0]
-
-    cursor.execute("SELECT status, COUNT(*) FROM applications GROUP BY status")
-    status_counts = cursor.fetchall()
-
-    print("\n===== STATISTICS DASHBOARD =====")
-    print(f"Total Applications: {total}")
-    for status, count in status_counts:
-        print(f"{status.capitalize()}: {count}")
-
-    cursor.close()
-    conn.close()
-
-
-# ---- MAIN MENU ----
-def main_menu():
     while True:
-        print("\n===== JOB APPLICATION TRACKER =====")
-        print("1. Add Application")
-        print("2. View All Applications")
-        print("3. Search Application")
-        print("4. Sort Applications")
-        print("5. Statistics Dashboard")
-        print("6. Update Application Status")
-        print("7. Delete Application")
-        print("8. Exit")
 
-        choice = input("Enter your choice (1-8): ")
+        print("\n***** JOB APPLICATION TRACKER *****")
+        print("1. Add Application")
+        print("2. View Applications")
+        print("3. Search")
+        print("4. Update Status")
+        print("5. Delete")
+        print("6. Exit")
+
+        ch = input("Enter Choice : ")
 
         try:
-            if choice == "1":
-                company = get_non_empty_input("company name")
-                role = get_non_empty_input("role")
-                applied_date = get_valid_date()
-                status = get_valid_status()
-                notes = input("Enter notes (optional): ")
-                add_application(company, role, applied_date, status=status, notes=notes)
 
-            elif choice == "2":
-                view_applications()
+            if ch == "1":
+                com = get_input("Company Name")
+                rl = get_input("Role")
+                dt = get_date()
+                st = get_status()
+                nt = input("Enter Notes : ")
 
-            elif choice == "3":
-                print("\nSearch by:")
-                print("1. Company Name")
+                add_application(com, rl, dt, st, nt)
+
+            elif ch == "2":
+                view_application()
+
+            elif ch == "3":
+                print("\nSearch By")
+                print("1. Company")
                 print("2. Role")
-                print("3. Status")
-                field = input("Enter choice (1-3): ").strip()
-                if field in ["1", "2", "3"]:
-                    keyword = get_non_empty_input("search keyword")
-                    search_applications(field, keyword)
+
+                f = input("Enter Choice : ")
+
+                if f in ["1", "2"]:
+                    key = get_input("Keyword")
+                    search_application(f, key)
                 else:
-                    print("Invalid choice.")
+                    print("Wrong Choice")
 
-            elif choice == "4":
-                print("\nSort by:")
-                print("1. Newest First")
-                print("2. Oldest First")
-                print("3. Company Name (A-Z)")
-                order_choice = input("Enter choice (1-3): ").strip()
-                sort_applications(order_choice)
 
-            elif choice == "5":
-                show_statistics()
+            elif ch == "4":
+                id = int(input("Enter ID : "))
+                app = get_application(id)
 
-            elif choice == "6":
-                app_id = int(input("Enter application ID: "))
-                app = get_application_by_id(app_id)
-                if app is None:
-                    print(f"No application found with ID {app_id}.")
+                if app:
+                    print(f"\n{app[1]} - {app[2]}")
+                    c = input("Update ? (y/n) : ").lower()
+
+                    if c == "y":
+                        st = get_status()
+                        update_application(id, st)
                 else:
-                    print(f"\nApplication found: {app[1]} - {app[2]} (Current status: {app[4]})")
-                    confirm = input("Update this application? (y/n): ").strip().lower()
-                    if confirm == "y":
-                        new_status = get_valid_status()
-                        update_status(app_id, new_status)
-                    else:
-                        print("Update cancelled.")
+                    print("ID Not Found")
 
-            elif choice == "7":
-                app_id = int(input("Enter application ID to delete: "))
-                app = get_application_by_id(app_id)
-                if app is None:
-                    print(f"No application found with ID {app_id}.")
+            elif ch == "5":
+
+                id = int(input("Enter ID : "))
+                app = get_application(id)
+
+                if app:
+                    print(f"\n{app[1]} - {app[2]}")
+                    c = input("Delete ? (y/n) : ").lower()
+
+                    if c == "y":
+                        del_application(id)
                 else:
-                    print(f"\nApplication found: {app[1]} - {app[2]}")
-                    confirm = input("Are you sure you want to delete this? (y/n): ").strip().lower()
-                    if confirm == "y":
-                        delete_application(app_id)
-                    else:
-                        print("Deletion cancelled.")
+                    print("ID Not Found")
 
-            elif choice == "8":
-                print("Exiting... Goodbye!")
+            elif ch == "6":
+
+                print("Good Bye")
                 break
 
             else:
-                print("Invalid choice. Please enter a number between 1-8.")
 
-        except ValueError:
-            print("Invalid input! Please enter a valid number for ID.")
-
-        except mysql.connector.Error as db_error:
-            print(f"Database error occurred: {db_error}")
+                print("Wrong Choice")
 
         except Exception as e:
-            print(f"Something went wrong: {e}")
+                print("Error:", e)
 
-
-main_menu()
+main()
